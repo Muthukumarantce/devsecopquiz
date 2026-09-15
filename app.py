@@ -3,7 +3,7 @@ from pathlib import Path
 import streamlit as st
 from quiz_engine import load_questions, pick_questions, calculate_score
 from database import init_db, save_attempt, save_claim
-from badge_generator import generate_winner_badge
+from badge_generator import generate_winner_badge, generate_participant_badge, MAX_NAME_CHARS
 
 st.set_page_config(page_title="myGUARD Security Challenge", page_icon="🛡️", layout="centered")
 
@@ -17,7 +17,7 @@ st.markdown("""<style>
 .pill{display:inline-block;padding:6px 12px;border-radius:20px;border:1px solid #2ecc87;color:#2ecc87;font-weight:800;font-size:12px}
 .question{font-size:22px;font-weight:600;line-height:1.45;margin:18px 0}
 div[data-testid="stRadio"] label{background:#0b121a;border:1px solid #263241;border-radius:10px;padding:10px 12px;margin-bottom:8px}
-.winner{text-align:center;font-size:38px;font-weight:800;color:#ffb02e}.score{text-align:center;font-size:64px;font-weight:700;color:#2ecc87}
+.winner{text-align:center;font-size:38px;font-weight:800;color:#ffb02e}.participant{text-align:center;font-size:32px;font-weight:800;color:#4d9fff}.score{text-align:center;font-size:64px;font-weight:700;color:#2ecc87}
 </style>""", unsafe_allow_html=True)
 
 for k,v in {"stage":"start","questions":[],"answers":[],"current":0,"started":None,"attempt_id":None,"score":None}.items():
@@ -37,17 +37,18 @@ def start_quiz():
 def finish():
     score=calculate_score(st.session_state.questions,st.session_state.answers)
     st.session_state.score=score
-    save_attempt(st.session_state.attempt_id,score,[q["id"] for q in st.session_state.questions],st.session_state.answers,score>=4)
+    # Only a perfect 5/5 is a winner. 4/5 and below are participants.
+    save_attempt(st.session_state.attempt_id,score,[q["id"] for q in st.session_state.questions],st.session_state.answers,score==5)
     st.session_state.stage="result"
 
 st.markdown('<div class="brand">my<span>GUARD</span></div><div style="text-align:center"><span class="pill">ENGINEERING EXPO • SECURITY CHALLENGE</span></div>',unsafe_allow_html=True)
 
 if st.session_state.stage=="start":
     st.markdown("###")
-    st.markdown('<div style="text-align:center"><span style="color:#ffb02e">🏆 Score well and win the myGUARD Quiz Winner badge</span></div>',unsafe_allow_html=True)
+    st.markdown('<div style="text-align:center"><span style="color:#ffb02e">🏆 Score 5/5 to win the myGUARD Quiz Winner badge</span></div>',unsafe_allow_html=True)
     st.title("Think you can beat this in 5 questions?")
     st.write("You've just seen how it’s done. Now let's see if it stuck. 5 quick questions — just you, your instincts, and a score waiting at the end.")
-    cols=st.columns(3); cols[0].metric("Questions","5"); cols[1].metric("Question Bank",len(bank())); cols[2].metric("Winner","4 / 5")
+    cols=st.columns(3); cols[0].metric("Questions","5"); cols[1].metric("Question Bank",len(bank())); cols[2].metric("Winner","5 / 5")
     if st.button("Take the challenge →",type="primary",use_container_width=True):
         start_quiz(); st.rerun()
     st.caption("AI agents • Security guardrails • CI/CD • Patches & versions")
@@ -79,48 +80,53 @@ elif st.session_state.stage=="quiz":
 
 elif st.session_state.stage=="result":
     score=st.session_state.score
-    if score>=4:
+    is_winner = score == 5
+    if is_winner:
         st.markdown(f'<div class="score">{score}<span style="font-size:22px;color:#7d8b99">/5</span></div><div class="winner">🏆 QUIZ WINNER!</div>',unsafe_allow_html=True)
-        st.success("You qualified for the myGUARD Quiz Winner badge.")
-
-
-        if st.session_state.get("claimed", False):
-            st.markdown("### 🎉 Your personalized myGUARD Quiz Winner badge")
-            badge_bytes = st.session_state.get("badge_bytes")
-            if badge_bytes:
-                st.image(badge_bytes, use_container_width=True)
-                st.download_button(
-                    "⬇️ DOWNLOAD MY BADGE",
-                    data=badge_bytes,
-                    file_name=f"myGUARD-Quiz-Winner-{st.session_state.get('winner_name','Winner').replace(' ', '-')}.jpg",
-                    mime="image/jpeg",
-                    use_container_width=True,
-                    type="primary",
-                )
-            st.success("Badge claim recorded. Show this personalized badge to the stall team to collect your physical sticker.")
-        else:
-            with st.form("claim"):
-                name=st.text_input("Name *", placeholder="Enter your name", max_chars=25, help="Maximum 25 characters. Long names are automatically scaled to fit the badge.")
-                ok=st.form_submit_button("CLAIM MY BADGE",type="primary",use_container_width=True)
-            if ok:
-                if not name.strip():
-                    st.error("Please enter your name.")
-                elif len(" ".join(name.strip().split())) > 25:
-                    st.error("Name must be 25 characters or fewer.")
-                else:
-                    badge_bytes = generate_winner_badge(name)
-                    save_claim(st.session_state.attempt_id,name)
-                    st.session_state.claimed=True
-                    st.session_state.winner_name=name.strip()
-                    st.session_state.badge_bytes=badge_bytes
-                    st.rerun()
+        st.success("Perfect score! You qualified for the myGUARD Quiz Winner badge.")
+        badge_title = "🎉 Your personalized myGUARD Quiz Winner badge"
+        badge_generator = generate_winner_badge
+        file_prefix = "myGUARD-Quiz-Winner"
+        claim_message = "Badge claim recorded. Show this personalized badge to the stall team to collect your physical sticker."
     else:
-        st.markdown(f'<div class="score">{score}<span style="font-size:22px;color:#7d8b99">/5</span></div>',unsafe_allow_html=True)
-        st.markdown('<div style="text-align:center;font-size:30px;font-weight:800;color:#ffb02e">🎯 CHALLENGE PARTICIPANT</div>',unsafe_allow_html=True)
-        st.success("Thanks for participating in the myGUARD Security Challenge!")
-        st.write("You participated in the challenge and completed all 5 questions. Keep exploring smarter, safer software with myGUARD.")
+        st.markdown(f'<div class="score">{score}<span style="font-size:22px;color:#7d8b99">/5</span></div><div class="participant">🎯 CHALLENGE PARTICIPANT</div>',unsafe_allow_html=True)
+        st.info("Thanks for participating in the myGUARD Security Challenge! A score of 5/5 is required for the Quiz Winner badge. You can claim a personalized Challenge Participant badge.")
+        badge_title = "🎯 Your personalized myGUARD Challenge Participant badge"
+        badge_generator = generate_participant_badge
+        file_prefix = "myGUARD-Challenge-Participant"
+        claim_message = "Participant badge recorded. Show this personalized badge to the stall team."
+
+    if st.session_state.get("claimed", False):
+        st.markdown(f"### {badge_title}")
+        badge_bytes = st.session_state.get("badge_bytes")
+        if badge_bytes:
+            st.image(badge_bytes, use_container_width=True)
+            st.download_button(
+                "⬇️ DOWNLOAD MY BADGE",
+                data=badge_bytes,
+                file_name=f"{file_prefix}-{st.session_state.get('claim_name','Participant').replace(' ', '-')}.jpg",
+                mime="image/jpeg", use_container_width=True, type="primary",
+            )
+        st.success(claim_message)
+    else:
+        with st.form("claim"):
+            name=st.text_input("Name *", placeholder="Enter your name", max_chars=MAX_NAME_CHARS, help=f"Maximum {MAX_NAME_CHARS} characters. Long names are automatically scaled to fit the badge.")
+            ok=st.form_submit_button("GET MY BADGE",type="primary",use_container_width=True)
+        if ok:
+            clean=" ".join(name.strip().split())
+            if not clean:
+                st.error("Please enter your name.")
+            elif len(clean)>MAX_NAME_CHARS:
+                st.error(f"Name must be {MAX_NAME_CHARS} characters or fewer.")
+            else:
+                badge_bytes=badge_generator(clean)
+                save_claim(st.session_state.attempt_id,clean)
+                st.session_state.claimed=True
+                st.session_state.claim_name=clean
+                st.session_state.badge_bytes=badge_bytes
+                st.rerun()
     if st.button("Try again",use_container_width=True):
-        for key in ["claimed","score","questions","answers","current","started","attempt_id","winner_name","badge_bytes"]:
+        for key in ["claimed","score","questions","answers","current","started","attempt_id","claim_name","badge_bytes"]:
             st.session_state.pop(key,None)
         st.session_state.stage="start"
         st.rerun()
