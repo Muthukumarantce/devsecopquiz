@@ -90,7 +90,7 @@ elif st.session_state.stage=="result":
         claim_message = "Badge claim recorded. Show this personalized badge to the stall team to collect your physical sticker."
     else:
         st.markdown(f'<div class="score">{score}<span style="font-size:22px;color:#7d8b99">/5</span></div><div class="participant">🎯 BETTER LUCK NEXT TIME</div>',unsafe_allow_html=True)
-        st.info("Thanks for participating in the myGUARD Security Challenge! A score of 5/5 is required for the Quiz Winner badge. You can claim a personalized Better Luck Next Time badge.")
+        st.info("You just missed the winning score! Enter your name to claim your personalized badge.")
         badge_title = "🎯 Your personalized myGUARD Better Luck Next Time badge"
         badge_generator = generate_participant_badge
         file_prefix = "myGUARD-Better-Luck-Next-Time"
