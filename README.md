@@ -1,29 +1,44 @@
-# myGUARD Streamlit Security Challenge
+# myGUARD Security Challenge — Streamlit
 
-A Streamlit-based exhibition quiz inspired by the supplied DevSecOps/AI Agent prototype.
+## Visitor experience
+- 5 random questions selected from the 30-question bank.
+- 5-minute challenge.
+- **5/5 = Quiz Winner** and gets a personalized gold Winner badge.
+- **0/5 through 4/5 = Challenge Participant** and gets a personalized blue Participant badge.
+- Visitor enters **name only**, maximum 25 characters.
+- Both badges can be downloaded from the result screen.
 
-## Visitor flow
-- Visitor answers 5 randomly selected questions from the active 30-question bank.
-- Score is calculated automatically.
-- **4/5 or 5/5:** visitor enters **Name only** (up to 25 characters) and receives a personalized **myGUARD Quiz Winner** badge.
-- The winner badge keeps the supplied artwork and uses a large bold condensed display name beneath the gold `QUIZ WINNER` ribbon, with matching navy/gold styling and star/line ornaments. The name is dynamically scaled to keep even 25-character names readable, while retaining the same bold condensed Winner-style treatment.
-- **0–3/5:** visitor is shown as a **Challenge Participant** and no winner badge is generated.
+## Admin login
+Create `.streamlit/secrets.toml` locally or use Streamlit Cloud App Settings → Secrets:
 
-## Run
+```toml
+ADMIN_USERNAME = "myguardadmin"
+ADMIN_PASSWORD = "replace-with-a-strong-password"
+```
+
+Never commit `secrets.toml` to GitHub.
+
+## Admin features
+- Username + password login.
+- Upload/validate/publish 30-question CSV/XLSX bank.
+- Download CSV/XLSX templates.
+- Results dashboard and CSV export.
+- Built-in QR Code Generator: enter the final deployed quiz URL, generate, preview and download the PNG.
+
+There is also a command-line helper:
+
+```bash
+python generate_qr.py https://your-app-name.streamlit.app
+```
+
+## Run locally
+
 ```bash
 python -m venv .venv
-source .venv/bin/activate       # Windows: .venv\\Scripts\\activate
+source .venv/bin/activate  # Windows: .venv\\Scripts\\activate
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Admin
-Open **Admin** from the Streamlit sidebar. Set `ADMIN_PASSWORD` in `.streamlit/secrets.toml`.
-
-Upload either CSV or XLSX with exactly these columns:
-`id, category, difficulty, question, option_a, option_b, option_c, option_d, answer`
-
-The active question bank must contain exactly 30 questions.
-
-## Important production note
-This starter uses local SQLite and a local question CSV for easy setup. For a public exhibition deployment, use a persistent database such as PostgreSQL/Supabase and keep the answer key server-side rather than in a publicly accessible app asset.
+## Deployment note
+For Streamlit Community Cloud, push the project to GitHub and configure `ADMIN_USERNAME` and `ADMIN_PASSWORD` in the app's Secrets. The local SQLite database and local question-bank file are suitable for a starter/demo; for a public exhibition with multiple devices, use a persistent hosted database such as PostgreSQL/Supabase and server-side answer storage.
