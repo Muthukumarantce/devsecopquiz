@@ -136,7 +136,7 @@ def _add_participant_ribbon(image):
     draw.line((int(width*.17), int(height*.67), int(width*.83), int(height*.67)), fill=(72,170,245), width=8)
     draw.line((int(width*.16), int(height*.785), int(width*.84), int(height*.785)), fill=BLUE_DARK, width=5)
 
-    text = "CHALLENGE PARTICIPANT"
+    text = "BETTER LUCK NEXT TIME"
     font = _fit_font(draw, text, int(width*.66), start_size=66, min_size=30)
     bbox = draw.textbbox((0,0), text, font=font, stroke_width=2)
     tw = bbox[2]-bbox[0]
@@ -152,7 +152,7 @@ def _add_participant_ribbon(image):
     return image
 
 def generate_participant_badge(name: str) -> bytes:
-    """Generate a personalized blue CHALLENGE PARTICIPANT badge for scores 0/5–4/5."""
+    """Generate a personalized blue BETTER LUCK NEXT TIME badge for scores 0/5–4/5."""
     image = _prepare_base()
     image = _add_participant_ribbon(image)
     image = _add_name(image, name)
