@@ -48,7 +48,7 @@ if st.session_state.stage=="start":
     st.markdown('<div style="text-align:center"><span style="color:#ffb02e">🏆 Score 5/5 to win the myGUARD Quiz Winner badge</span></div>',unsafe_allow_html=True)
     st.title("Think you can beat this in 5 questions?")
     st.write("You've just seen how it’s done. Now let's see if it stuck. 5 quick questions — just you, your instincts, and a score waiting at the end.")
-    cols=st.columns(3); cols[0].metric("Questions","5"); cols[1].metric("Question Bank",len(bank())); cols[2].metric("Winner","5 / 5")
+    cols=st.columns(2); cols[0].metric("Challenge Questions","5"); cols[1].metric("Winner","5 / 5")
     if st.button("Take the challenge →",type="primary",use_container_width=True):
         start_quiz(); st.rerun()
     st.caption("AI agents • Security guardrails • CI/CD • Patches & versions")
